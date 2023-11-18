@@ -49,7 +49,9 @@ def get(address, text=None, prefix=None) -> str:
         old_color = color
         color = lambda x: c.rwx(old_color(x))
 
+    is_addr = False
     if text is None and isinstance(address, int) and address > 255:
+        is_addr = True
         text = hex(int(address))
     if text is None:
         text = str(int(address))
@@ -58,6 +60,9 @@ def get(address, text=None, prefix=None) -> str:
         # Replace first N characters with the provided prefix
         text = prefix + text[len(prefix) :]
 
+    if is_addr:
+        color_underline = lambda x: c.rwx(color(x))
+        return color(text[:-3]) +color_underline(text[-3:])
     return color(text)
 
 

@@ -419,6 +419,7 @@ def malloc_chunk(addr, fake=False, verbose=True, simple=False) -> None:
                 if bins.contains_chunk(chunk.real_size, chunk.address):
                     no_match = False
                     headers_to_print.append(message.on(f"Free chunk ({bins.bin_type})"))
+                    out_fields += f"Size: 0x{chunk.real_size:02x} (with flag bits: 0x{chunk.size:02x})\n"
                     if not verbose:
                         fields_to_print.update(bins.bin_type.valid_fields())
                     ret = M.pwndbg.commands.telescope.telescope(chunk.address, count=chunk.real_size//size_sz ,to_string=True)
@@ -430,6 +431,7 @@ def malloc_chunk(addr, fake=False, verbose=True, simple=False) -> None:
 
             if no_match:
                 headers_to_print.append(message.system("Allocated chunk"))
+                out_fields += f"Size: 0x{chunk.real_size:02x} (with flag bits: 0x{chunk.size:02x})\n"
                 for i_offset in range(0, chunk.real_size, size_sz * 2):
                     data_fd = pwndbg.gdblib.memory.read(chunk.address + i_offset, 0x8)
                     data_bk = pwndbg.gdblib.memory.read(chunk.address + i_offset + 0x8, 0x8)
