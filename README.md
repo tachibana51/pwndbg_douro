@@ -6,12 +6,11 @@
 Original README [README_ORIGIN.md](README_ORIGIN.md).
 
 ## Why?
-
-Required more readable heap viewing for enviroment, so following features are implemented now
-- more readable `heap` command
-   - change some `left_arrow` uses
-   - auto `try_free` and `telescope` on the `heap` command  
-- last 3-nibble underline for all addresses
+I want more readable `heap` viewing for myself, following features are implemented now.  
+- more readable `heap` command  
+   - changes some `left_arrow` symbol usage  
+   - auto `try_free` and `telescope` in `heap` command  
+- underline the last 3 nibbles of every addresses  
 
 ## TODO
 
