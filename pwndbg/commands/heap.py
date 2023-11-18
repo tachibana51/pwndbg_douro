@@ -373,7 +373,7 @@ parser.add_argument(
 @pwndbg.commands.OnlyWithResolvedHeapSyms
 @pwndbg.commands.OnlyWhenHeapIsInitialized
 @pwndbg.commands.OnlyWhenUserspace
-def malloc_chunk(addr, fake=False, verbose=True, simple=False) -> None:
+def malloc_chunk(addr, fake=False, verbose=False, simple=False) -> None:
     """Print a malloc_chunk struct's contents."""
     allocator = pwndbg.heap.current
 
@@ -424,9 +424,10 @@ def malloc_chunk(addr, fake=False, verbose=True, simple=False) -> None:
                         fields_to_print.update(bins.bin_type.valid_fields())
                     ret = M.pwndbg.commands.telescope.telescope(chunk.address, count=chunk.real_size//size_sz ,to_string=True)
                     if len(ret) > 0:
-                        out_fields += message.on(f" ≫≫ tel 0x{chunk.address:02x} {hex(chunk.real_size)} bytes ≪≪ \n")
+                        out_fields += message.on(f" ≫≫ tel 0x{chunk.address+0x10:02x} - 0x10 ≪≪ | {hex(chunk.real_size - 0x10)} + 0x10 → {hex(chunk.real_size)} bytes \n")
                         ret[0] = "   " + ret[0]
                         out_fields += "\n   ".join(ret)
+                        out_fields += message.hint(".\n")
                         out_fields += "\n"
 
             if no_match:
@@ -440,10 +441,13 @@ def malloc_chunk(addr, fake=False, verbose=True, simple=False) -> None:
                     #out_fields += f"{M.get(chunk.address)}: {hex(cell_fd)} {hex(cell_bk)} \n"#  0x{M.get(chunk.address + i_offset + 0x10, chunk.address + i_offset + 0x10):02x} \n"
                 ret = M.pwndbg.commands.telescope.telescope(chunk.address, count=chunk.real_size//size_sz ,to_string=True)
                 if len(ret) > 0:
-                    out_fields+= message.system(f" ≫≫ tel 0x{chunk.address:02x}  {hex(chunk.real_size)} bytes ≪≪  \n")
+                    out_fields+= message.system(f" ≫≫ tel 0x{chunk.address+0x10:02x} - 0x10 ≪≪ | {hex(chunk.real_size - 0x10)} + 0x10 → {hex(chunk.real_size)} bytes \n")
                     ret[0] = "   " + ret[0]
                     out_fields += "\n   ".join(ret)
                     out_fields += "\n"
+                print(message.hint(f"[*] Trying free({hex(chunk.address + 0x10)}) ..."))
+                try_free(chunk.address+0x10)
+                print(message.hint(f"[*] Done.\n"))
 
     if verbose:
         fields_to_print.update(["prev_size", "size", "fd", "bk", "fd_nextsize", "bk_nextsize"])
@@ -469,7 +473,7 @@ def malloc_chunk(addr, fake=False, verbose=True, simple=False) -> None:
             )
         else:
             out_fields += (
-                message.system(field_to_print) + f": 0x{getattr(chunk, field_to_print):02x}\n"
+                message.on(field_to_print) + f": 0x{getattr(chunk, field_to_print):02x}\n"
             )
 
 
