@@ -80,6 +80,7 @@ def format_bin(bins: Bins, verbose=False, offset=None):
             formatted_chain = pwndbg.chain.format(
                 chain_fd[0], offset=offset, limit=limit, safe_linking=safe_lnk
             )
+
         else:
             formatted_chain = pwndbg.chain.format(chain_fd[0], offset=offset, safe_linking=safe_lnk)
 
@@ -372,7 +373,7 @@ parser.add_argument(
 @pwndbg.commands.OnlyWithResolvedHeapSyms
 @pwndbg.commands.OnlyWhenHeapIsInitialized
 @pwndbg.commands.OnlyWhenUserspace
-def malloc_chunk(addr, fake=False, verbose=False, simple=False) -> None:
+def malloc_chunk(addr, fake=False, verbose=True, simple=False) -> None:
     """Print a malloc_chunk struct's contents."""
     allocator = pwndbg.heap.current
 
@@ -380,7 +381,11 @@ def malloc_chunk(addr, fake=False, verbose=False, simple=False) -> None:
 
     headers_to_print = []  # both state (free/allocated) and flags
     fields_to_print = set()  # in addition to addr and size
-    out_fields = f"Addr: {M.get(chunk.address)}\n"
+
+    size_sz = allocator.size_sz
+    #out_fields = f"Size Addr: {M.get(chunk.address - size_sz)}\n"
+    #out_fields = f"Found: {M.get(chunk.address)}\n"
+    out_fields = ""
 
     if fake:
         headers_to_print.append(message.on("Fake chunk"))
@@ -416,8 +421,27 @@ def malloc_chunk(addr, fake=False, verbose=False, simple=False) -> None:
                     headers_to_print.append(message.on(f"Free chunk ({bins.bin_type})"))
                     if not verbose:
                         fields_to_print.update(bins.bin_type.valid_fields())
+                    ret = M.pwndbg.commands.telescope.telescope(chunk.address, count=chunk.real_size//size_sz ,to_string=True)
+                    if len(ret) > 0:
+                        out_fields += message.on(f" ≫ ≫_ tel 0x{chunk.address:02x} {hex(chunk.real_size)} bytes ≪≪ \n")
+                        ret[0] = "   " + ret[0]
+                        out_fields += "\n   ".join(ret)
+                        out_fields += "\n"
+
             if no_match:
-                headers_to_print.append(message.hint("Allocated chunk"))
+                headers_to_print.append(message.system("Allocated chunk"))
+                for i_offset in range(0, chunk.real_size, size_sz * 2):
+                    data_fd = pwndbg.gdblib.memory.read(chunk.address + i_offset, 0x8)
+                    data_bk = pwndbg.gdblib.memory.read(chunk.address + i_offset + 0x8, 0x8)
+                    cell_fd = pwndbg.gdblib.arch.unpack(data_fd)
+                    cell_bk = pwndbg.gdblib.arch.unpack(data_bk)
+                    #out_fields += f"{M.get(chunk.address)}: {hex(cell_fd)} {hex(cell_bk)} \n"#  0x{M.get(chunk.address + i_offset + 0x10, chunk.address + i_offset + 0x10):02x} \n"
+                ret = M.pwndbg.commands.telescope.telescope(chunk.address, count=chunk.real_size//size_sz ,to_string=True)
+                if len(ret) > 0:
+                    out_fields+= message.system(f" ≫ ≫_ tel 0x{chunk.address:02x}  {hex(chunk.real_size)} bytes ≪≪  \n")
+                    ret[0] = "   " + ret[0]
+                    out_fields += "\n   ".join(ret)
+                    out_fields += "\n"
 
     if verbose:
         fields_to_print.update(["prev_size", "size", "fd", "bk", "fd_nextsize", "bk_nextsize"])
@@ -445,6 +469,7 @@ def malloc_chunk(addr, fake=False, verbose=False, simple=False) -> None:
             out_fields += (
                 message.system(field_to_print) + f": 0x{getattr(chunk, field_to_print):02x}\n"
             )
+
 
     print(" | ".join(headers_to_print) + "\n" + out_fields)
 

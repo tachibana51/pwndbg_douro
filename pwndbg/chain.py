@@ -148,4 +148,4 @@ def format(value, limit=LIMIT, code=True, offset=0, hard_stop=None, hard_end=0, 
     if len(chain) == 1:
         return enhanced
 
-    return arrow_right.join(rest) + arrow_left + enhanced
+    return arrow_right.join(rest) + " ≪≪  " + enhanced
