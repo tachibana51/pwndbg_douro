@@ -433,12 +433,6 @@ def malloc_chunk(addr, fake=False, verbose=False, simple=False) -> None:
             if no_match:
                 headers_to_print.append(message.system("Allocated chunk"))
                 out_fields += f"Size: 0x{chunk.real_size:02x} (with flag bits: 0x{chunk.size:02x})\n"
-                for i_offset in range(0, chunk.real_size, size_sz * 2):
-                    data_fd = pwndbg.gdblib.memory.read(chunk.address + i_offset, 0x8)
-                    data_bk = pwndbg.gdblib.memory.read(chunk.address + i_offset + 0x8, 0x8)
-                    cell_fd = pwndbg.gdblib.arch.unpack(data_fd)
-                    cell_bk = pwndbg.gdblib.arch.unpack(data_bk)
-                    #out_fields += f"{M.get(chunk.address)}: {hex(cell_fd)} {hex(cell_bk)} \n"#  0x{M.get(chunk.address + i_offset + 0x10, chunk.address + i_offset + 0x10):02x} \n"
                 ret = M.pwndbg.commands.telescope.telescope(chunk.address, count=chunk.real_size//size_sz ,to_string=True)
                 if len(ret) > 0:
                     out_fields+= message.system(f" ≫≫ tel 0x{chunk.address+0x10:02x} - 0x10 ≪≪ | {hex(chunk.real_size - 0x10)} + 0x10 → {hex(chunk.real_size)} bytes \n")
