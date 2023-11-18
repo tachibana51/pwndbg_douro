@@ -423,7 +423,7 @@ def malloc_chunk(addr, fake=False, verbose=True, simple=False) -> None:
                         fields_to_print.update(bins.bin_type.valid_fields())
                     ret = M.pwndbg.commands.telescope.telescope(chunk.address, count=chunk.real_size//size_sz ,to_string=True)
                     if len(ret) > 0:
-                        out_fields += message.on(f" ≫ ≫_ tel 0x{chunk.address:02x} {hex(chunk.real_size)} bytes ≪≪ \n")
+                        out_fields += message.on(f" ≫≫ tel 0x{chunk.address:02x} {hex(chunk.real_size)} bytes ≪≪ \n")
                         ret[0] = "   " + ret[0]
                         out_fields += "\n   ".join(ret)
                         out_fields += "\n"
@@ -438,7 +438,7 @@ def malloc_chunk(addr, fake=False, verbose=True, simple=False) -> None:
                     #out_fields += f"{M.get(chunk.address)}: {hex(cell_fd)} {hex(cell_bk)} \n"#  0x{M.get(chunk.address + i_offset + 0x10, chunk.address + i_offset + 0x10):02x} \n"
                 ret = M.pwndbg.commands.telescope.telescope(chunk.address, count=chunk.real_size//size_sz ,to_string=True)
                 if len(ret) > 0:
-                    out_fields+= message.system(f" ≫ ≫_ tel 0x{chunk.address:02x}  {hex(chunk.real_size)} bytes ≪≪  \n")
+                    out_fields+= message.system(f" ≫≫ tel 0x{chunk.address:02x}  {hex(chunk.real_size)} bytes ≪≪  \n")
                     ret[0] = "   " + ret[0]
                     out_fields += "\n   ".join(ret)
                     out_fields += "\n"
