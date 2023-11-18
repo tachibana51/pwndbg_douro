@@ -3,7 +3,7 @@
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=2592000)](https://choosealicense.com/licenses/mit/)
 
 
-Original README [https://github.com/pwndbg/pwndbg/README.md](https://github.com/pwndbg/pwndbg/README.md).
+Original README [https://github.com/pwndbg/pwndbg/blob/dev/README.md](https://github.com/pwndbg/pwndbg/blob/dev/README.md).
 
 ## Why?
 I want more readable `heap` viewing for myself, following features are implemented now.  
