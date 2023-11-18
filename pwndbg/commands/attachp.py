@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import os
 import stat
@@ -8,6 +10,7 @@ import gdb
 
 import pwndbg.commands
 from pwndbg.color import message
+from pwndbg.commands import CommandCategory
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawTextHelpFormatter,
@@ -34,7 +37,7 @@ Original GDB attach command help:
 parser.add_argument("target", type=str, help="pid, process name or device file to attach to")
 
 
-@pwndbg.commands.ArgparsedCommand(parser)
+@pwndbg.commands.ArgparsedCommand(parser, category=CommandCategory.START)
 def attachp(target) -> None:
     try:
         resolved_target = int(target)

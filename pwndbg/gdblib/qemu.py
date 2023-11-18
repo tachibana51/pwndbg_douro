@@ -2,9 +2,10 @@
 Determine whether the target is being run under QEMU.
 """
 
+from __future__ import annotations
+
 import os
 from typing import Any
-from typing import Optional
 
 import gdb
 import psutil
@@ -57,9 +58,19 @@ def is_qemu_kernel() -> bool:
     return is_qemu() and not is_usermode()
 
 
+@pwndbg.lib.cache.cache_until("stop")
+def exec_file_supported() -> bool:
+    """Returns ``True`` if the remote target understands the 'qXfer:exec-file:read' packet.
+    A check for this feature is done in vmmap code, to warn against running legacy Qemu versions.
+    """
+    response = gdb.execute("maintenance packet qSupported", to_string=True, from_tty=False)
+
+    return "exec-file" in response
+
+
 @start
 @pwndbg.lib.cache.cache_until("stop")
-def root() -> Optional[Any]:
+def root() -> Any | None:
     if not is_qemu_usermode():
         return None
 
@@ -79,7 +90,7 @@ def pid():
     talking to.
     """
     # Find all inodes in our process which are connections.
-    targets = set(c.raddr for c in psutil.Process().connections())
+    targets = {c.raddr for c in psutil.Process().connections()}
 
     # No targets? :(
     if not targets:

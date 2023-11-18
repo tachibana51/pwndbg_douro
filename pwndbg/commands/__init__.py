@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import functools
 import io
@@ -16,7 +18,7 @@ from pwndbg.heap.ptmalloc import DebugSymsHeap
 from pwndbg.heap.ptmalloc import HeuristicHeap
 from pwndbg.heap.ptmalloc import SymbolUnresolvableError
 
-commands: "List[Command]" = []
+commands: list[Command] = []
 command_names = set()
 
 
@@ -76,7 +78,7 @@ class Command(gdb.Command):
     """Generic command wrapper"""
 
     builtin_override_whitelist = {"up", "down", "search", "pwd", "start", "ignore"}
-    history: Dict[int, str] = {}
+    history: dict[int, str] = {}
 
     def __init__(
         self,
@@ -161,12 +163,7 @@ class Command(gdb.Command):
 
         last_line = lines[-1]
         number_str, command = last_line.split(maxsplit=1)
-        try:
-            number = int(number_str)
-        except ValueError:
-            # Workaround for a GDB 8.2 bug when show commands return error value
-            # See issue #523
-            return False
+        number = int(number_str)
 
         # A new command was entered by the user
         if number not in Command.history:
@@ -183,7 +180,7 @@ class Command(gdb.Command):
         try:
             return self.function(*args, **kwargs)
         except TypeError as te:
-            print("%r: %s" % (self.function.__name__.strip(), self.function.__doc__.strip()))
+            print(f"{self.function.__name__.strip()!r}: {self.function.__doc__.strip()}")
             pwndbg.exception.handle(self.function.__name__)
         except Exception:
             pwndbg.exception.handle(self.function.__name__)
@@ -275,7 +272,7 @@ def OnlyWhenUserspace(function):
     return _OnlyWhenUserspace
 
 
-def OnlyWithArch(arch_names: List[str]):
+def OnlyWithArch(arch_names: list[str]):
     """Decorates function to work only with the specified archictectures."""
     for arch in arch_names:
         if arch not in pwndbg.gdblib.arch_mod.ARCHS:
@@ -666,6 +663,7 @@ def load_commands() -> None:
     import pwndbg.commands.stack
     import pwndbg.commands.start
     import pwndbg.commands.telescope
+    import pwndbg.commands.tips
     import pwndbg.commands.tls
     import pwndbg.commands.valist
     import pwndbg.commands.version

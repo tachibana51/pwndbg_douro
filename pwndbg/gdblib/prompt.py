@@ -1,4 +1,5 @@
-import re
+from __future__ import annotations
+
 from os import environ
 
 import gdb
@@ -10,6 +11,7 @@ import pwndbg.lib.cache
 import pwndbg.profiling
 from pwndbg.color import disable_colors
 from pwndbg.color import message
+from pwndbg.lib.tips import color_tip
 from pwndbg.lib.tips import get_tip_of_the_day
 
 funcs_list_str = ", ".join(message.notice("$" + f.name) for f in pwndbg.gdblib.functions.functions)
@@ -37,15 +39,13 @@ cur = None
 
 def initial_hook(*a) -> None:
     if show_tip and not pwndbg.decorators.first_prompt:
-        colored_tip = re.sub(
-            "`(.*?)`", lambda s: message.warn(s.group()[1:-1]), get_tip_of_the_day()
-        )
+        colored_tip = color_tip(get_tip_of_the_day())
         print(
             message.prompt("------- tip of the day")
             + message.system(" (disable with %s)" % message.notice("set show-tips off"))
             + message.prompt(" -------")
         )
-        print((colored_tip))
+        print(colored_tip)
     pwndbg.decorators.first_prompt = True
 
     prompt_hook(*a)
@@ -91,13 +91,4 @@ def set_prompt() -> None:
     gdb.execute(f"set prompt {prompt}")
 
 
-if pwndbg.gdblib.events.before_prompt_event.is_real_event:
-    gdb.prompt_hook = initial_hook
-
-else:
-    # Old GDBs doesn't have gdb.events.before_prompt, so we will emulate it using gdb.prompt_hook
-    def extended_prompt_hook(*a):
-        pwndbg.gdblib.events.before_prompt_event.invoke_callbacks()
-        return prompt_hook(*a)
-
-    gdb.prompt_hook = extended_prompt_hook
+gdb.prompt_hook = initial_hook

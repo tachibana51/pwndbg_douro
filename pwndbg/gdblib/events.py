@@ -4,14 +4,13 @@ when various events occur to the debuggee (e.g. STOP on SIGINT)
 by using a decorator.
 """
 
+from __future__ import annotations
+
 import sys
 from functools import partial
 from functools import wraps
 from typing import Any
 from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Set
 
 import gdb
 
@@ -35,7 +34,7 @@ debug = config.add_param("debug-events", False, "display internal event debuggin
 # capture this so that we can fire off all of the 'start' events first.
 class StartEvent:
     def __init__(self) -> None:
-        self.registered: List[Callable] = []
+        self.registered: list[Callable] = []
         self.running = False
 
     def connect(self, function) -> None:
@@ -54,7 +53,9 @@ class StartEvent:
 
         for function in self.registered:
             if debug:
-                sys.stdout.write("%r %s.%s\n" % ("start", function.__module__, function.__name__))
+                sys.stdout.write(
+                    "{!r} {}.{}\n".format("start", function.__module__, function.__name__)
+                )
             function()
 
     def on_exited(self) -> None:
@@ -66,47 +67,9 @@ class StartEvent:
 
 gdb.events.start = StartEvent()
 
-
-class EventWrapper:
-    """
-    Wrapper for GDB events which may not exist on older GDB versions but we still can
-    fire them manually (to invoke them you have to call `invoke_callbacks`).
-    """
-
-    def __init__(self, name: str) -> None:
-        self.name = name
-
-        self._event = getattr(gdb.events, self.name, None)
-        self._is_real_event = self._event is not None
-
-    def connect(self, func) -> None:
-        if self._event is not None:
-            self._event.connect(func)
-
-    def disconnect(self, func) -> None:
-        if self._event is not None:
-            self._event.disconnect(func)
-
-    @property
-    def is_real_event(self) -> bool:
-        return self._is_real_event
-
-    def invoke_callbacks(self) -> None:
-        """
-        As an optimization please don't call this if your GDB has this event (check `.is_real_event`).
-        """
-        for f in registered[self]:
-            f()
-
-
-# Old GDBs doesn't have gdb.events.before_prompt, so we will emulate it using gdb.prompt_hook
-before_prompt_event = EventWrapper("before_prompt")
-gdb.events.before_prompt = before_prompt_event
-
-
 # In order to support reloading, we must be able to re-fire
 # all 'objfile' and 'stop' events.
-registered: Dict[Any, List[Callable]] = {
+registered: dict[Any, list[Callable]] = {
     gdb.events.exited: [],
     gdb.events.cont: [],
     gdb.events.new_objfile: [],
@@ -114,21 +77,16 @@ registered: Dict[Any, List[Callable]] = {
     gdb.events.start: [],
     gdb.events.new_thread: [],
     gdb.events.before_prompt: [],  # The real event might not exist, but we wrap it
+    gdb.events.memory_changed: [],
+    gdb.events.register_changed: [],
 }
-
-# GDB 7.9 and above only
-try:
-    registered[gdb.events.memory_changed] = []
-    registered[gdb.events.register_changed] = []
-except (NameError, AttributeError):
-    pass
 
 
 # When performing remote debugging, gdbserver is very noisy about which
 # objects are loaded.  This greatly slows down the debugging session.
 # In order to combat this, we keep track of which objfiles have been loaded
 # this session, and only emit objfile events for each *new* file.
-objfile_cache: Dict[str, Set[str]] = {}
+objfile_cache: dict[str, set[str]] = {}
 
 
 def connect(func, event_handler, name=""):
@@ -138,7 +96,7 @@ def connect(func, event_handler, name=""):
     @wraps(func)
     def caller(*a):
         if debug:
-            sys.stdout.write("%r %s.%s %r\n" % (name, func.__module__, func.__name__, a))
+            sys.stdout.write(f"{name!r} {func.__module__}.{func.__name__} {a!r}\n")
 
         if a and isinstance(a[0], gdb.NewObjFileEvent):
             objfile = a[0].new_objfile
@@ -221,15 +179,19 @@ gdb.events.new_objfile.connect(log_objfiles)
 
 def after_reload(start=True) -> None:
     if gdb.selected_inferior().pid:
-        for f in registered[gdb.events.stop]:
-            f()
-        for f in registered[gdb.events.start]:
-            if start:
+        if gdb.events.stop in registered:
+            for f in registered[gdb.events.stop]:
                 f()
-        for f in registered[gdb.events.new_objfile]:
-            f()
-        for f in registered[gdb.events.before_prompt]:
-            f()
+        if gdb.events.start in registered:
+            for f in registered[gdb.events.start]:
+                if start:
+                    f()
+        if gdb.events.new_objfile in registered:
+            for f in registered[gdb.events.new_objfile]:
+                f()
+        if gdb.events.before_prompt in registered:
+            for f in registered[gdb.events.before_prompt]:
+                f()
 
 
 def on_reload() -> None:

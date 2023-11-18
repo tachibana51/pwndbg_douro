@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import functools
 import sys
 import traceback
 
 import gdb
+import pkg_resources
 
 import pwndbg.lib.cache
 import pwndbg.lib.stdio
@@ -29,6 +32,22 @@ verbose = config.add_param(
 debug = config.add_param(
     "exception-debugger", False, "whether to debug exceptions raised in Pwndbg commands"
 )
+
+
+def inform_unmet_dependencies(errors) -> None:
+    """
+    Informs user about unmet dependencies
+    """
+    msg = message.error("You appear to have unmet Pwndbg dependencies.\n")
+    for e in errors:
+        if isinstance(e, pkg_resources.DistributionNotFound):
+            msg += message.notice(f"- required {e.args[0]}, but not installed\n")
+        else:
+            msg += message.notice(f"- required {e.args[1]}, installed: {e.args[0]}\n")
+    msg += message.notice("Consider running: ")
+    msg += message.hint("`setup.sh` ")
+    msg += message.notice("from Pwndbg project directory.\n")
+    print(msg)
 
 
 @pwndbg.lib.cache.cache_until("forever")

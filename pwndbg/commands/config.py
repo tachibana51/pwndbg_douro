@@ -2,6 +2,8 @@
 Dumps all pwndbg-specific configuration points.
 """
 
+from __future__ import annotations
+
 import argparse
 
 import pwndbg.commands
@@ -69,7 +71,7 @@ def display_config(filter_pattern: str, scope: str, has_file_command: bool = Tru
         map(len, [extend_value_with_default(repr(v.value), repr(v.default)) for v in values])
     )
 
-    header = print_row("Name", "Value", "Def", "Documentation", longest_optname, longest_value)
+    header = print_row("Name", "Value", "Default", "Documentation", longest_optname, longest_value)
     print("-" * (len(header)))
 
     for v in sorted(values):
